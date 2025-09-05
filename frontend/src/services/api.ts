@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Event, Alert, ApiResponse, AnalyzerStatus, LoginRequest, RegisterRequest, AuthResponse, ApiKey } from '../types';
+import { Event, Alert, ApiResponse, AnalyzerStatus, LoginRequest, RegisterRequest, AuthResponse, ApiKey, ActionTypeInfo, ActionConfig, PendingAction, ActionHistory, ActiveBlock, AttackPattern, Recommendation } from '../types';
 
 // Создаем экземпляр axios с базовой конфигурацией
 const api = axios.create({
@@ -361,38 +361,38 @@ export const systemApi = {
   }
 };
 
+import { Event, Alert, ApiResponse, AnalyzerStatus, LoginRequest, RegisterRequest, AuthResponse, ApiKey, ActionTypeInfo, ActionConfig, PendingAction, ActionHistory, ActiveBlock, AttackPattern, Recommendation } from '../types';
+
+// ... (rest of the file is the same until alertActionsApi)
+
 // API для действий по алертам
 export const alertActionsApi = {
   // Обработка алерта
-  processAlert: async (alertData: any): Promise<any[]> => {
+  processAlert: async (alertData: Alert): Promise<PendingAction[]> => {
     const response = await api.post('/alert-actions/process-alert', alertData);
     return response.data;
   },
 
   // Получить типы действий
-  getActionTypes: async (): Promise<{
-    action_types: string[];
-    alert_types: string[];
-    severity_levels: string[];
-  }> => {
+  getActionTypes: async (): Promise<ActionTypeInfo> => {
     const response = await api.get('/alert-actions/action-types');
     return response.data;
   },
 
   // Получить конфигурации действий
-  getActionConfigs: async (): Promise<Record<string, any[]>> => {
+  getActionConfigs: async (): Promise<Record<string, ActionConfig[]>> => {
     const response = await api.get('/alert-actions/action-configs');
     return response.data;
   },
 
   // Обновить конфигурации действий
-  updateActionConfigs: async (alertType: string, configs: any[]): Promise<{ message: string }> => {
+  updateActionConfigs: async (alertType: string, configs: ActionConfig[]): Promise<{ message: string }> => {
     const response = await api.put(`/alert-actions/action-configs/${alertType}`, configs);
     return response.data;
   },
 
   // Получить ожидающие действия
-  getPendingActions: async (): Promise<any[]> => {
+  getPendingActions: async (): Promise<PendingAction[]> => {
     const response = await api.get('/alert-actions/pending-actions');
     return response.data;
   },
@@ -404,19 +404,13 @@ export const alertActionsApi = {
   },
 
   // Получить историю действий
-  getActionHistory: async (limit: number = 100): Promise<any[]> => {
+  getActionHistory: async (limit: number = 100): Promise<ActionHistory[]> => {
     const response = await api.get(`/alert-actions/action-history?limit=${limit}`);
     return response.data;
   },
 
   // Получить активные блокировки
-  getActiveBlocks: async (): Promise<{
-    active_blocks: Array<{
-      ip: string;
-      expires_at: string;
-      remaining_minutes: number;
-    }>;
-  }> => {
+  getActiveBlocks: async (): Promise<{ active_blocks: ActiveBlock[] }> => {
     const response = await api.get('/alert-actions/active-blocks');
     return response.data;
   },
@@ -434,13 +428,13 @@ export const alertActionsApi = {
   },
 
   // Получить паттерны атак
-  getAttackPatterns: async (): Promise<Record<string, any>> => {
+  getAttackPatterns: async (): Promise<Record<string, AttackPattern>> => {
     const response = await api.get('/alert-actions/attack-patterns');
     return response.data;
   },
 
   // Получить рекомендации для типа алерта
-  getRecommendations: async (alertType: string): Promise<any> => {
+  getRecommendations: async (alertType: string): Promise<Recommendation> => {
     const response = await api.get(`/alert-actions/recommendations/${alertType}`);
     return response.data;
   }

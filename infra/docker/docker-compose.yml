@@ -4,10 +4,12 @@ services:
     image: postgres:16
     container_name: ss_pg
     restart: unless-stopped
+    env_file:
+      - ../../.env
     environment:
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: security_system
-      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
     ports:
       - "5432:5432"
     volumes:
@@ -28,12 +30,14 @@ services:
       dockerfile: infra/docker/server.Dockerfile
     container_name: ss_backend
     restart: unless-stopped
+    env_file:
+      - ../../.env
     depends_on:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/security_system
-      JWT_SECRET: dev-secret-please-change
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
       JWT_TTL_MIN: "60"
       ALLOWED_ORIGINS: '["http://localhost:5173","http://localhost:3000"]'
     ports:

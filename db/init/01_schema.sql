@@ -132,17 +132,17 @@ CREATE INDEX IF NOT EXISTS idx_notifications_method ON notifications(method);
 CREATE INDEX IF NOT EXISTS idx_notifications_enabled ON notifications(enabled);
 
 -- Хранилище API-ключей пользователей (храним в открытом виде для простоты)
+-- Хранилище API-ключей пользователей (храним хеши для безопасности)
 CREATE TABLE IF NOT EXISTS api_keys (
     id          SERIAL PRIMARY KEY,
     user_id     INT  NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name        TEXT,
-    token       TEXT NOT NULL UNIQUE,  -- API ключ в открытом виде
+    token_hash  TEXT NOT NULL UNIQUE,  -- Хеш API ключа
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     revoked_at  TIMESTAMPTZ
 );
 
 CREATE INDEX IF NOT EXISTS idx_api_keys_user      ON api_keys(user_id);
-CREATE INDEX IF NOT EXISTS idx_api_keys_token     ON api_keys(token);
 CREATE INDEX IF NOT EXISTS idx_api_keys_revoked   ON api_keys(revoked_at);
 
 -- Ограничение: один пользователь может иметь только один активный API ключ

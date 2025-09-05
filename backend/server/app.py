@@ -40,47 +40,44 @@ try:
     from fastapi.responses import FileResponse
     import os
     
-    @app.get("/files/{file_path:path}")
-    async def download_file(file_path: str):
-        """Скачивание файлов агентов с правильными заголовками"""
-        full_path = f"/app/offline_repos/{file_path}"
-        if os.path.exists(full_path) and os.path.isfile(full_path):
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    OFFLINE_REPOS_DIR = os.path.join(BASE_DIR, "..", "offline_repos")
+
+    async def safe_download_file(file_path: str):
+        """Safely serves a file from the offline_repos directory."""
+        if not file_path:
+            raise HTTPException(status_code=400, detail="File path cannot be empty.")
+
+        # Securely join path and resolve it
+        base_path = os.path.abspath(OFFLINE_REPOS_DIR)
+        requested_path = os.path.abspath(os.path.join(base_path, file_path))
+
+        # Check for path traversal
+        if not requested_path.startswith(base_path):
+            raise HTTPException(status_code=403, detail="Forbidden: Access is denied.")
+
+        if os.path.exists(requested_path) and os.path.isfile(requested_path):
             return FileResponse(
-                path=full_path,
-                filename=os.path.basename(full_path),
+                path=requested_path,
+                filename=os.path.basename(requested_path),
                 media_type='application/octet-stream',
                 headers={
-                    'Content-Disposition': f'attachment; filename="{os.path.basename(full_path)}"',
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                    'Content-Disposition': f'attachment; filename="{os.path.basename(requested_path)}"',
                     'Access-Control-Expose-Headers': 'Content-Disposition'
                 }
             )
         else:
-            from fastapi import HTTPException
             raise HTTPException(status_code=404, detail="File not found")
+
+    @app.get("/files/{file_path:path}")
+    async def download_file(file_path: str):
+        """Скачивание файлов агентов с правильными заголовками"""
+        return await safe_download_file(file_path)
     
     @app.get("/repos/{file_path:path}")
     async def download_repo_file(file_path: str):
         """Скачивание файлов агентов через /repos эндпоинт (для совместимости с Nginx)"""
-        full_path = f"/app/offline_repos/{file_path}"
-        if os.path.exists(full_path) and os.path.isfile(full_path):
-            return FileResponse(
-                path=full_path,
-                filename=os.path.basename(full_path),
-                media_type='application/octet-stream',
-                headers={
-                    'Content-Disposition': f'attachment; filename="{os.path.basename(full_path)}"',
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-                    'Access-Control-Expose-Headers': 'Content-Disposition'
-                }
-            )
-        else:
-            from fastapi import HTTPException
-            raise HTTPException(status_code=404, detail="File not found")
+        return await safe_download_file(file_path)
     
     log.info("Mounted download endpoint at /files")
 except Exception as e:

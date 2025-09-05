@@ -58,14 +58,15 @@ def register(data: RegisterIn):
             
             # Автоматически создаем API ключ для нового пользователя
             raw_token = secrets.token_hex(32)
+            token_hash = bcrypt.hashpw(raw_token.encode(), bcrypt.gensalt()).decode()
             now = datetime.now(timezone.utc)
             
             s.execute(text(
                 """
-                INSERT INTO security_system.api_keys (user_id, name, token, created_at)
-                VALUES (:uid, :name, :token, :ts)
+                INSERT INTO security_system.api_keys (user_id, name, token_hash, created_at)
+                VALUES (:uid, :name, :token_hash, :ts)
                 """
-            ), {"uid": user_id, "name": "default", "token": raw_token, "ts": now})
+            ), {"uid": user_id, "name": "default", "token_hash": token_hash, "ts": now})
             
             # Автоматически создаем агента для нового пользователя
             import socket
@@ -179,7 +180,7 @@ def get_current_api_key(username: str):
         # найти последний активный API ключ
         key_row = s.execute(text(
             """
-            SELECT name, token, created_at FROM security_system.api_keys
+            SELECT name, created_at FROM security_system.api_keys
             WHERE user_id = :uid AND revoked_at IS NULL
             ORDER BY created_at DESC
             LIMIT 1
@@ -188,20 +189,21 @@ def get_current_api_key(username: str):
         
         if not key_row:
             # Если ключа нет, создаем новый
-            raw = secrets.token_hex(32)
+            raw_token = secrets.token_hex(32)
+            token_hash = bcrypt.hashpw(raw_token.encode(), bcrypt.gensalt()).decode()
             now = datetime.now(timezone.utc)
             
             s.execute(text(
                 """
-                INSERT INTO security_system.api_keys (user_id, name, token, created_at)
-                VALUES (:uid, :name, :token, :ts)
+                INSERT INTO security_system.api_keys (user_id, name, token_hash, created_at)
+                VALUES (:uid, :name, :token_hash, :ts)
                 """
-            ), {"uid": user_id, "name": "default", "token": raw, "ts": now})
+            ), {"uid": user_id, "name": "default", "token_hash": token_hash, "ts": now})
             
-            return ApiKeyOut(token=raw, name="default", created_at=now)
+            return ApiKeyOut(token=raw_token, name="default", created_at=now)
         
-        # Возвращаем существующий ключ
-        return ApiKeyOut(token=key_row[1], name=key_row[0], created_at=key_row[2])
+        # Возвращаем информацию о ключе, но не сам ключ
+        return ApiKeyOut(token=None, name=key_row[0], created_at=key_row[1])
 
 @router.post("/api-keys", response_model=ApiKeyOut)
 def create_api_key(request: ApiKeyRequest):
@@ -209,7 +211,8 @@ def create_api_key(request: ApiKeyRequest):
     if not request.username:
         raise HTTPException(status_code=400, detail="username required")
     
-    raw = secrets.token_hex(32)
+    raw_token = secrets.token_hex(32)
+    token_hash = bcrypt.hashpw(raw_token.encode(), bcrypt.gensalt()).decode()
     now = datetime.now(timezone.utc)
     
     with get_session() as s:
@@ -231,9 +234,9 @@ def create_api_key(request: ApiKeyRequest):
         # Создаем новый ключ
         s.execute(text(
             """
-            INSERT INTO security_system.api_keys (user_id, name, token, created_at)
-            VALUES (:uid, :name, :token, :ts)
+            INSERT INTO security_system.api_keys (user_id, name, token_hash, created_at)
+            VALUES (:uid, :name, :token_hash, :ts)
             """
-        ), {"uid": user_id, "name": "default", "token": raw, "ts": now})
+        ), {"uid": user_id, "name": "default", "token_hash": token_hash, "ts": now})
         
-    return ApiKeyOut(token=raw, name="default", created_at=now)
+    return ApiKeyOut(token=raw_token, name="default", created_at=now)

@@ -5,3 +5,24 @@
 *.bak-auto
 *.bak-fix
 *.backup
+
+# Environments
+.env
+*.env.local
+
+# Dependency directories
+node_modules/
+/frontend/node_modules
+
+# Build artifacts
+/frontend/dist
+/frontend/.vite
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Other
+.DS_Store
