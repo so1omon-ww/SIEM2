@@ -291,9 +291,6 @@ class AnalyzerCore:
             elif action_type == "log":
                 return await self._execute_log_action(action, rule, event)
             
-            elif action_type == "block":
-                return await self._execute_block_action(action, rule, event)
-            
             else:
                 self.logger.warning(f"Unknown action type: {action_type}")
                 return None
@@ -357,16 +354,6 @@ class AnalyzerCore:
             "type": "log",
             "message": message,
             "level": level
-        }
-    
-    async def _execute_block_action(self, action: Dict[str, Any], rule, event: Dict[str, Any]) -> Dict[str, Any]:
-        """Выполнить действие блокировки"""
-        # Здесь можно добавить логику блокировки IP, портов и т.д.
-        self.logger.warning(f"Block action not implemented for rule {rule.name}")
-        
-        return {
-            "type": "block",
-            "status": "not_implemented"
         }
     
     async def _create_notifications(self, rule, event: Dict[str, Any], result: Dict[str, Any]):

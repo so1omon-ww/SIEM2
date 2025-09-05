@@ -90,3 +90,53 @@ export interface AuthContextType {
   generateApiKey: () => Promise<string>;
   isAuthenticated: boolean;
 }
+
+// Типы для действий по алертам
+export interface ActionTypeInfo {
+  action_types: string[];
+  alert_types: string[];
+  severity_levels: string[];
+}
+
+export interface ActionConfig {
+  type: string;
+  parameters: Record<string, any>;
+  enabled: boolean;
+}
+
+export interface PendingAction {
+  id: string;
+  alert_id: number;
+  action_type: string;
+  created_at: string;
+  details: Record<string, any>;
+}
+
+export interface ActionHistory {
+  id: number;
+  alert_id: number;
+  action_type: string;
+  status: 'pending' | 'done' | 'failed';
+  executed_at: string;
+  message: string;
+}
+
+export interface ActiveBlock {
+  ip: string;
+  expires_at: string;
+  remaining_minutes: number;
+}
+
+export interface AttackPattern {
+  name: string;
+  description: string;
+  mitre_attack_id: string;
+  confidence: number;
+  severity: string;
+}
+
+export interface Recommendation {
+  title: string;
+  description:string;
+  priority: 'low' | 'medium' | 'high';
+}

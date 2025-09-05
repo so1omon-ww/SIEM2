@@ -19,22 +19,25 @@ async def get_current_user_from_api_key(x_api_key: Annotated[str | None, Header(
         )
 
     with get_session() as s:
-        # Найти API ключ в базе данных
-        key_row = s.execute(text(
+        # Получаем все активные хеши токенов
+        hashes = s.execute(text(
             """
-            SELECT user_id FROM security_system.api_keys
-            WHERE token = :api_key AND revoked_at IS NULL
+            SELECT user_id, token_hash FROM security_system.api_keys
+            WHERE revoked_at IS NULL
             """
-        ), {"api_key": x_api_key}).first()
+        )).fetchall()
 
-        if not key_row:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid API Key",
-            )
-        
-        user_id = key_row[0]
-        return user_id
+        # Проверяем предоставленный ключ по каждому хешу
+        import bcrypt
+        for user_id, token_hash in hashes:
+            if bcrypt.checkpw(x_api_key.encode(), token_hash.encode()):
+                return user_id
+
+        # Если ни один ключ не подошел
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid API Key",
+        )
 
 def get_current_user():
     """Получение текущего пользователя из контекста запроса"""

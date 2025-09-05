@@ -16,12 +16,6 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional
 import requests
 
-# Импортируем Windows-специфичный сборщик
-try:
-    from windows_privileged_collector import WindowsPrivilegedCollector
-except ImportError:
-    WindowsPrivilegedCollector = None
-
 # Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
@@ -37,15 +31,6 @@ class PrivilegedWindowsCollector:
         self.server_url = server_url
         self.api_key = api_key
         self.host_id = socket.gethostname()
-        
-        # Инициализируем Windows-специфичный сборщик если доступен
-        self.windows_collector = None
-        if WindowsPrivilegedCollector:
-            try:
-                self.windows_collector = WindowsPrivilegedCollector(self.host_id)
-                log.info("Windows collector initialized")
-            except Exception as e:
-                log.warning(f"Не удалось инициализировать Windows сборщик: {e}")
         
     def collect_system_events(self) -> List[Dict[str, Any]]:
         """Сбор системных событий Windows"""
@@ -214,8 +199,7 @@ class PrivilegedWindowsCollector:
                 url, 
                 json={"items": events}, 
                 headers=headers,
-                timeout=10,
-                verify=False
+                timeout=10
             )
             
             if response.status_code == 200:
@@ -234,7 +218,7 @@ def main():
     
     # Получаем конфигурацию из переменных окружения
     server_url = os.environ.get("SERVER_URL", "http://backend:8000")
-    api_key = os.environ.get("API_KEY") or os.environ.get("SIEM_API_KEY") or "3ac0f6cfbe0d9c663fc86a922aacb018543cb3f5fdd882bd680821bb60bbc7da"
+    api_key = os.environ.get("API_KEY") or os.environ.get("SIEM_API_KEY")
     
     if not api_key:
         log.error("API_KEY not set!")
@@ -267,20 +251,6 @@ def main():
             
             log.debug("Collecting Windows events...")
             all_events.extend(collector.collect_windows_events())
-            
-            # Use Windows-specific collector if available
-            if collector.windows_collector:
-                log.debug("Collecting Windows Security Events...")
-                all_events.extend(collector.windows_collector.collect_security_events())
-                
-                log.debug("Collecting Windows System Events...")
-                all_events.extend(collector.windows_collector.collect_system_events())
-                
-                log.debug("Collecting Windows Process Creation Events...")
-                all_events.extend(collector.windows_collector.collect_process_creation_events())
-                
-                log.debug("Collecting Windows Network Activity...")
-                all_events.extend(collector.windows_collector.collect_network_activity())
             
             # Send events
             if all_events:
