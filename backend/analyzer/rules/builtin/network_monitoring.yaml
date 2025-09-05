@@ -1,0 +1,165 @@
+rules:
+  - name: "ssh_connection"
+    type: "immediate"
+    description: "SSH подключение"
+    severity: "low"
+    category: "network"
+    tags: ["ssh", "network", "remote_access"]
+    
+    # Условия срабатывания - SSH подключения
+    matches:
+      - field: "event_type"
+        operator: "eq"
+        value: "net.connection"
+        case_sensitive: false
+      
+      - field: "dst_port"
+        operator: "eq"
+        value: 22
+        case_sensitive: false
+    
+    # Действия при срабатывании
+    actions:
+      - type: "alert"
+        parameters:
+          title: "🔐 SSH подключение"
+          description: "Обнаружено SSH подключение с {src_ip} на {dst_ip}:22"
+        priority: 4
+      
+      - type: "log"
+        parameters:
+          message: "SSH connection detected from {src_ip} to {dst_ip}"
+          level: "info"
+        priority: 5
+
+  - name: "ftp_connection"
+    type: "immediate"
+    description: "FTP подключение"
+    severity: "low"
+    category: "network"
+    tags: ["ftp", "network", "file_transfer"]
+    
+    # Условия срабатывания - FTP подключения
+    matches:
+      - field: "event_type"
+        operator: "eq"
+        value: "net.connection"
+        case_sensitive: false
+      
+      - field: "dst_port"
+        operator: "in"
+        value: [21, 20]
+        case_sensitive: false
+    
+    # Действия при срабатывании
+    actions:
+      - type: "alert"
+        parameters:
+          title: "📁 FTP подключение"
+          description: "Обнаружено FTP подключение с {src_ip} на {dst_ip}:{dst_port}"
+        priority: 4
+      
+      - type: "log"
+        parameters:
+          message: "FTP connection detected from {src_ip} to {dst_ip}:{dst_port}"
+          level: "info"
+        priority: 5
+
+  - name: "email_traffic"
+    type: "immediate"
+    description: "Почтовый трафик"
+    severity: "low"
+    category: "network"
+    tags: ["email", "network", "smtp", "imap", "pop3"]
+    
+    # Условия срабатывания - почтовые сервисы
+    matches:
+      - field: "event_type"
+        operator: "eq"
+        value: "net.connection"
+        case_sensitive: false
+      
+      - field: "dst_port"
+        operator: "in"
+        value: [25, 110, 143, 465, 587, 993, 995]
+        case_sensitive: false
+    
+    # Действия при срабатывании
+    actions:
+      - type: "alert"
+        parameters:
+          title: "📧 Почтовый трафик"
+          description: "Обнаружена активность почтового сервиса на порт {dst_port}"
+        priority: 4
+      
+      - type: "log"
+        parameters:
+          message: "Email traffic detected to port {dst_port}"
+          level: "info"
+        priority: 5
+
+  - name: "high_traffic_volume"
+    type: "immediate"
+    description: "Высокий объем трафика"
+    severity: "medium"
+    category: "network"
+    tags: ["traffic", "network", "volume"]
+    
+    # Условия срабатывания - большой объем данных
+    matches:
+      - field: "event_type"
+        operator: "eq"
+        value: "net.connection"
+        case_sensitive: false
+      
+      - field: "protocol"
+        operator: "eq"
+        value: "tcp"
+        case_sensitive: false
+    
+    # Действия при срабатывании
+    actions:
+      - type: "alert"
+        parameters:
+          title: "[STATS] Высокий объем трафика"
+          description: "Обнаружен TCP трафик между {src_ip} и {dst_ip}"
+        priority: 3
+      
+      - type: "log"
+        parameters:
+          message: "High volume TCP traffic detected"
+          level: "warning"
+        priority: 4
+
+  - name: "database_connection"
+    type: "immediate"
+    description: "Подключение к базе данных"
+    severity: "medium"
+    category: "network"
+    tags: ["database", "network", "mysql", "postgresql"]
+    
+    # Условия срабатывания - подключения к БД
+    matches:
+      - field: "event_type"
+        operator: "eq"
+        value: "net.connection"
+        case_sensitive: false
+      
+      - field: "dst_port"
+        operator: "in"
+        value: [3306, 5432, 1433, 1521, 27017]
+        case_sensitive: false
+    
+    # Действия при срабатывании
+    actions:
+      - type: "alert"
+        parameters:
+          title: "[DATABASE] Подключение к БД"
+          description: "Обнаружено подключение к базе данных на порт {dst_port}"
+        priority: 3
+      
+      - type: "log"
+        parameters:
+          message: "Database connection detected to port {dst_port}"
+          level: "warning"
+        priority: 4

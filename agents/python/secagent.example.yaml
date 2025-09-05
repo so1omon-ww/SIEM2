@@ -1,0 +1,19 @@
+# secagent.example.yaml — конфиг коллектора (Linux/Windows)
+# Укажите адрес сервера и API ключ:
+server_url: "http://1921.168.0.23:8000"   # например: "http://192.168.1.10:8000"
+api_key: "690023318602ee078fb6d5cbe2a17f8bd5d99a8e4899d8765c5ad23828938beb"          # API ключ из веб-интерфейса
+host_id: "Mine Windows"       # понятное имя хоста
+min_severity: "info"
+verify_tls: false
+log_level: "INFO"
+
+# Настройки коллектора
+collector:
+  enabled: true
+  interval: 30
+  
+# Настройки для Linux
+linux:
+  auth_file: "/var/log/auth.log"      # для RHEL: "/var/log/secure"
+  batch_size: 1
+  flush_interval: 2.0

@@ -1,0 +1,161 @@
+rules:
+  - name: "critical_process_detection"
+    type: "immediate"
+    description: "Обнаружение критических процессов"
+    severity: "critical"
+    category: "process"
+    tags: ["critical", "process", "malware"]
+    
+    # Условия срабатывания
+matches:
+  - field: "event_type"
+    operator: "eq"
+    value: "process.start"
+  - field: "details.process_name"
+    operator: "in"
+    value: ["cmd.exe", "powershell.exe", "wscript.exe", "cscript.exe", "rundll32.exe"]
+    
+    # Действия при срабатывании
+    actions:
+      - type: "alert"
+        parameters:
+          title: "Critical process started"
+          description: "Запущен потенциально опасный процесс: {details.process_name}"
+        priority: 1
+      
+      - type: "notification"
+        parameters:
+          title: "Critical process"
+          message: "Запущен процесс {details.process_name} с IP {src_ip}"
+          template: "critical_process"
+        priority: 1
+      
+      - type: "log"
+        parameters:
+          message: "Critical process started: {details.process_name}"
+          level: "critical"
+        priority: 1
+
+  - name: "suspicious_network_activity"
+    type: "immediate"
+    description: "Обнаружение подозрительной сетевой активности"
+    severity: "medium"
+    category: "network"
+    tags: ["suspicious", "network", "exfiltration"]
+    
+    # Условия срабатывания
+    match:
+      event_type: "net.connection"
+      details.dst_port: [22, 23, 3389, 5900, 8080, 8443]
+      details.bytes_sent: ">1000000"  # 1MB
+    
+    # Действия при срабатывании
+    actions:
+      - type: "alert"
+        parameters:
+          title: "[WARNING] Подозрительная сетевая активность"
+          description: "Большой объем данных отправлен на подозрительный порт {details.dst_port}"
+        priority: 2
+      
+      - type: "notification"
+        parameters:
+          title: "[WARNING] Подозрительная сеть"
+          message: "Обнаружена передача данных на порт {details.dst_port}"
+          template: "suspicious_network"
+        priority: 2
+      
+      - type: "log"
+        parameters:
+          message: "Suspicious network activity detected"
+          level: "warning"
+        priority: 3
+
+  - name: "multiple_failed_logins"
+    type: "threshold"
+    description: "Обнаружение множественных неудачных попыток входа"
+    severity: "medium"
+    category: "authentication"
+    tags: ["brute_force", "authentication", "attack"]
+    
+    # Условия срабатывания
+    match:
+      event_type: "auth.failure"
+    
+    # Настройки threshold правила
+    window: "5m"
+    threshold: 3
+    group_by: ["src_ip", "details.username"]
+    dedup_key: "failed_login_{src_ip}_{details.username}"
+    
+    # Действия при срабатывании
+    actions:
+      - type: "alert"
+        parameters:
+          title: "🔒 Множественные неудачные попытки входа"
+          description: "IP {src_ip} совершил {count} неудачных попыток входа для пользователя {details.username}"
+        priority: 2
+      
+      - type: "notification"
+        parameters:
+          title: "🔒 Неудачные попытки входа"
+          message: "Обнаружены множественные неудачные попытки с {src_ip}"
+          template: "auth_failure"
+        priority: 3
+      
+      - type: "log"
+        parameters:
+          message: "Multiple failed logins detected from {src_ip}"
+          level: "warning"
+        priority: 4
+
+  - name: "normal_network_activity"
+    type: "immediate"
+    description: "Обычная сетевая активность"
+    severity: "low"
+    category: "network"
+    tags: ["normal", "network", "monitoring"]
+    
+    # Условия срабатывания - обычные HTTP/HTTPS подключения
+    match:
+      event_type: "net.connection"
+      dst_port: [80, 443]
+    
+    # Действия при срабатывании
+    actions:
+      - type: "alert"
+        parameters:
+          title: "[INFO] Обычная сетевая активность"
+          description: "Обнаружено подключение к веб-сервису на порт {dst_port}"
+        priority: 4
+      
+      - type: "log"
+        parameters:
+          message: "Normal web traffic detected to port {dst_port}"
+          level: "info"
+        priority: 5
+
+  - name: "dns_activity"
+    type: "immediate"
+    description: "DNS активность"
+    severity: "low"
+    category: "network"
+    tags: ["dns", "network", "normal"]
+    
+    # Условия срабатывания - DNS запросы
+    match:
+      event_type: "net.connection"
+      dst_port: 53
+    
+    # Действия при срабатывании
+    actions:
+      - type: "alert"
+        parameters:
+          title: "[NET] DNS запрос"
+          description: "Обнаружен DNS запрос с {src_ip} на {dst_ip}"
+        priority: 5
+      
+      - type: "log"
+        parameters:
+          message: "DNS query detected from {src_ip}"
+          level: "info"
+        priority: 6

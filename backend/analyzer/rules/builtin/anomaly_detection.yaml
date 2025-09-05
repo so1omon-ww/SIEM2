@@ -1,0 +1,68 @@
+rules:
+  - name: "network_anomaly_detection"
+    type: "anomaly"
+    description: "Обнаружение аномалий в сетевом трафике"
+    severity: "medium"
+    category: "network"
+    tags: ["anomaly", "network", "baseline"]
+    
+    # Условия срабатывания
+    matches:
+      - field: "event_type"
+        operator: "eq"
+        value: "net.connection"
+    
+    # Действия при срабатывании
+    actions:
+      - type: "alert"
+        parameters:
+          title: "Обнаружена сетевая аномалия"
+          description: "Сетевой трафик выходит за пределы нормального диапазона"
+        priority: 2
+      
+      - type: "notification"
+        parameters:
+          title: "[WARNING] Сетевая аномалия"
+          message: "Обнаружено отклонение от базового сетевого поведения"
+          template: "anomaly_detected"
+        priority: 3
+      
+      - type: "log"
+        parameters:
+          message: "Network anomaly detected"
+          level: "warning"
+        priority: 4
+
+  - name: "user_behavior_anomaly"
+    type: "anomaly"
+    description: "Обнаружение аномалий в поведении пользователей"
+    severity: "high"
+    category: "authentication"
+    tags: ["anomaly", "user", "behavior"]
+    
+    # Условия срабатывания
+    matches:
+      - field: "event_type"
+        operator: "in"
+        value: ["auth.success", "auth.failure"]
+    
+    # Действия при срабатывании
+    actions:
+      - type: "alert"
+        parameters:
+          title: "Обнаружена аномалия поведения пользователя"
+          description: "Поведение пользователя отклоняется от нормального паттерна"
+        priority: 1
+      
+      - type: "notification"
+        parameters:
+          title: "User anomaly"
+          message: "Обнаружено подозрительное поведение пользователя"
+          template: "user_anomaly"
+        priority: 2
+      
+      - type: "log"
+        parameters:
+          message: "User behavior anomaly detected"
+          level: "error"
+        priority: 3

@@ -1,0 +1,85 @@
+services:
+  # База данных PostgreSQL
+  db:
+    image: postgres:16
+    container_name: ss_pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: security_system
+      POSTGRES_USER: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ss_pg_data:/var/lib/postgresql/data
+      - ../../db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d security_system"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - siem_network
+
+  # Backend сервер
+  backend:
+    build:
+      context: ../..
+      dockerfile: infra/docker/server.Dockerfile
+    container_name: ss_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/security_system
+      JWT_SECRET: dev-secret-please-change
+      JWT_TTL_MIN: "60"
+      ALLOWED_ORIGINS: '["http://localhost:5173","http://localhost:3000"]'
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../../backend:/app/backend:ro  # Монтируем код для разработки
+      - backend_state:/app/backend/analyzer/.state  # Volume для записи состояния
+      - ../../offline_repos:/app/offline_repos  # Локальные офлайн-репозитории, раздаются как /files
+    networks:
+      - siem_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+
+  # Frontend веб-интерфейс
+  frontend:
+    build:
+      context: ../..
+      dockerfile: infra/docker/frontend.Dockerfile
+    container_name: ss_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+    networks:
+      - siem_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  siem_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  ss_pg_data:
+    driver: local
+  backend_state:
+    driver: local
+

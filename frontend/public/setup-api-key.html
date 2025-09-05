@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Настройка API ключа - SIEM</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            display: none;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            display: none;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔑 Настройка API ключа</h1>
+        
+        <div class="info">
+            <strong>Информация:</strong> Для работы с SIEM системой необходимо установить API ключ в браузере. 
+            Это позволит получать данные с сервера.
+        </div>
+
+        <form id="apiKeyForm">
+            <div class="form-group">
+                <label for="apiKey">API ключ:</label>
+                <input type="text" id="apiKey" name="apiKey" 
+                       value="690023318602ee078fb6d5cbe2a17f8bd5d99a8e4899d8765c5ad23828938beb" 
+                       placeholder="Введите API ключ">
+            </div>
+            
+            <button type="submit">Установить API ключ</button>
+        </form>
+
+        <div id="success" class="success">
+            ✅ API ключ успешно установлен! Теперь можно перейти к <a href="/">главной странице</a>.
+        </div>
+
+        <div id="error" class="error">
+            ❌ Ошибка при установке API ключа.
+        </div>
+
+        <div style="margin-top: 20px; text-align: center;">
+            <a href="/" style="color: #007bff; text-decoration: none;">← Вернуться на главную</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('apiKeyForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const apiKey = document.getElementById('apiKey').value.trim();
+            
+            if (!apiKey) {
+                showError('Пожалуйста, введите API ключ');
+                return;
+            }
+            
+            try {
+                // Сохраняем API ключ в localStorage
+                localStorage.setItem('api_key', apiKey);
+                
+                // Проверяем, что ключ сохранился
+                const savedKey = localStorage.getItem('api_key');
+                if (savedKey === apiKey) {
+                    showSuccess();
+                } else {
+                    showError('Не удалось сохранить API ключ');
+                }
+            } catch (error) {
+                showError('Ошибка при сохранении: ' + error.message);
+            }
+        });
+
+        function showSuccess() {
+            document.getElementById('success').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+        }
+
+        function showError(message) {
+            document.getElementById('error').textContent = '❌ ' + message;
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('success').style.display = 'none';
+        }
+
+        // Проверяем, есть ли уже API ключ
+        window.addEventListener('load', function() {
+            const existingKey = localStorage.getItem('api_key');
+            if (existingKey) {
+                document.getElementById('apiKey').value = existingKey;
+                showSuccess();
+            }
+        });
+    </script>
+</body>
+</html>

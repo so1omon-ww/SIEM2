@@ -1,0 +1,13 @@
+# sniffer.example.yaml — конфиг сниффера (Windows/Linux)
+# ВРУЧНУЮ укажи адрес сервера (порт 8000):
+server_url: "http://127.0.0.1:8000"   # например: "http://192.168.1.10:8000"
+token: null
+host_id: "HOSTNAME-OR-ASSET-ID"
+interface: null                       # null=авто; список: python netsniffer.py --list-ifaces
+verify_tls: false
+portscan_threshold: 10
+portscan_window_sec: 60
+block_on_portscan: false               # true = сразу блокировать источник локальным фаерволом
+min_severity: "info"
+dry_run: false
+log_level: "INFO"

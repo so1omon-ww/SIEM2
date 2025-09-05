@@ -1,0 +1,42 @@
+
+rules:
+  - name: "brute_force_detection"
+    type: "threshold"
+    description: "Обнаружение брутфорс атак"
+    severity: "medium"
+    category: "authentication"
+    tags: ["brute_force", "authentication", "attack"]
+    
+    # Условия срабатывания
+    matches:
+      - field: "event_type"
+        operator: "eq"
+        value: "auth.failure"
+        case_sensitive: false
+    
+    # Настройки threshold правила
+    window: "10m"
+    threshold: 5
+    group_by: ["src_ip", "user"]
+    dedup_key: "brute_force_{src_ip}_{user}"
+    
+    # Действия при срабатывании
+    actions:
+      - type: "alert"
+        parameters:
+          title: "Обнаружена брутфорс атака"
+          description: "IP {src_ip} пытается подобрать пароль для пользователя {user}"
+        priority: 1
+      
+      - type: "notification"
+        parameters:
+          title: "[WARNING] Брутфорс атака"
+          message: "Обнаружена попытка подбора пароля с {src_ip} для {user}"
+          template: "threat_detected"
+        priority: 2
+      
+      - type: "log"
+        parameters:
+          message: "Brute force attack detected from {src_ip} for user {user}"
+          level: "error"
+        priority: 3

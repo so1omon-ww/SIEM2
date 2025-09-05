@@ -1,0 +1,42 @@
+
+rules:
+  - name: "lateral_movement_detection"
+    type: "correlation"
+    description: "Обнаружение латерального движения в сети"
+    severity: "high"
+    category: "network"
+    tags: ["lateral_movement", "network", "persistence"]
+    
+    # Условия срабатывания
+    matches:
+      - field: "event_type"
+        operator: "in"
+        value: ["net.connection", "auth.success", "process.start"]
+        case_sensitive: false
+    
+    # Условия корреляции
+    conditions:
+      min_events: 3
+      max_events: 50
+      time_window: 3600  # 1 час
+    
+    # Действия при срабатывании
+    actions:
+      - type: "alert"
+        parameters:
+          title: "Обнаружено латеральное движение"
+          description: "Подозрительная активность указывает на латеральное движение в сети"
+        priority: 1
+      
+      - type: "notification"
+        parameters:
+          title: "Lateral movement"
+          message: "Обнаружены признаки латерального движения в сети"
+          template: "threat_detected"
+        priority: 2
+      
+      - type: "log"
+        parameters:
+          message: "Lateral movement detected in network"
+          level: "error"
+        priority: 3

@@ -1,0 +1,237 @@
+# Правила для обнаружения сетевых атак
+# DDoS, сканирование портов, брутфорс, ARP-спуфинг, DNS атаки
+
+# DDoS атаки
+ddos_syn_flood:
+  description: "Обнаружение DDoS атак с использованием SYN-флуда"
+  enabled: true
+  severity: high
+  conditions:
+    - "tcp_flags == 'SYN'"
+    - "tcp_flags != 'SYN,ACK'"
+  thresholds:
+    syn_packets_per_second: 200
+    syn_ack_ratio_min: 3.0
+    time_window_seconds: 10
+  actions:
+    - "rate_limit"
+    - "block_ip"
+    - "notify_admin"
+  parameters:
+    rate_limit:
+      max_connections_per_second: 10
+      ttl_minutes: 30
+    block_ip:
+      ttl_minutes: 60
+      conditions: ["confidence > 0.9"]
+
+ddos_http_rps:
+  description: "Обнаружение DDoS атак на HTTP сервисы"
+  enabled: true
+  severity: medium
+  conditions:
+    - "protocol == 'HTTP'"
+  thresholds:
+    requests_per_second: 100
+    same_uri_ratio: 0.8
+    time_window_seconds: 5
+  actions:
+    - "rate_limit"
+    - "notify_admin"
+  parameters:
+    rate_limit:
+      max_requests_per_second: 50
+      ttl_minutes: 15
+
+# Сканирование портов
+port_scan:
+  description: "Обнаружение сканирования портов"
+  enabled: true
+  severity: medium
+  conditions:
+    - "tcp_flags == 'SYN'"
+  thresholds:
+    unique_ports_per_source: 20
+    time_window_seconds: 15
+    failed_connections_ratio: 0.7
+  actions:
+    - "block_ip"
+    - "notify_admin"
+  parameters:
+    block_ip:
+      ttl_minutes: 120
+      conditions: ["confidence > 0.8"]
+
+horizontal_port_scan:
+  description: "Горизонтальное сканирование портов"
+  enabled: true
+  severity: high
+  conditions:
+    - "tcp_flags == 'SYN'"
+  thresholds:
+    unique_hosts_per_port: 10
+    time_window_seconds: 30
+  actions:
+    - "block_ip"
+    - "isolate_host"
+    - "notify_admin"
+  parameters:
+    block_ip:
+      ttl_minutes: 180
+    isolate_host:
+      ttl_minutes: 60
+
+# Брутфорс атаки
+bruteforce_ssh:
+  description: "Обнаружение попыток подбора паролей SSH"
+  enabled: true
+  severity: critical
+  conditions:
+    - "service == 'ssh'"
+    - "event_type == 'authentication_failure'"
+  thresholds:
+    failed_attempts_per_source: 10
+    time_window_seconds: 120
+    unique_users_per_source: 5
+  actions:
+    - "block_ip"
+    - "restart_service"
+    - "notify_admin"
+  parameters:
+    block_ip:
+      ttl_minutes: 180
+      conditions: ["confidence > 0.7"]
+    restart_service:
+      service: "ssh"
+
+bruteforce_http:
+  description: "Обнаружение попыток подбора паролей HTTP"
+  enabled: true
+  severity: high
+  conditions:
+    - "protocol == 'HTTP'"
+    - "status_code == 401"
+  thresholds:
+    failed_attempts_per_source: 15
+    time_window_seconds: 60
+  actions:
+    - "rate_limit"
+    - "notify_admin"
+  parameters:
+    rate_limit:
+      max_requests_per_minute: 10
+      ttl_minutes: 60
+
+# ARP атаки
+arp_spoof:
+  description: "Обнаружение ARP-спуфинга"
+  enabled: true
+  severity: critical
+  conditions:
+    - "protocol == 'ARP'"
+  thresholds:
+    ip_mac_conflict: 1
+    gratuitous_arp_per_second: 10
+  actions:
+    - "isolate_host"
+    - "flush_cache"
+    - "notify_admin"
+  parameters:
+    isolate_host:
+      ttl_minutes: 300
+      conditions: ["confidence > 0.9"]
+    flush_cache:
+      cache_type: "arp"
+
+arp_flood:
+  description: "Обнаружение ARP-флуда"
+  enabled: true
+  severity: high
+  conditions:
+    - "protocol == 'ARP'"
+  thresholds:
+    arp_packets_per_second: 50
+    time_window_seconds: 5
+  actions:
+    - "isolate_host"
+    - "notify_admin"
+  parameters:
+    isolate_host:
+      ttl_minutes: 60
+
+# DNS атаки
+dns_nxdomain_flood:
+  description: "Обнаружение DDoS атак на DNS с NXDOMAIN ответами"
+  enabled: true
+  severity: medium
+  conditions:
+    - "protocol == 'DNS'"
+    - "dns_response_code == 'NXDOMAIN'"
+  thresholds:
+    nxdomain_ratio: 0.5
+    min_queries: 30
+    time_window_seconds: 60
+  actions:
+    - "rate_limit"
+    - "restart_service"
+    - "notify_admin"
+  parameters:
+    rate_limit:
+      max_queries_per_second: 20
+      ttl_minutes: 30
+    restart_service:
+      service: "named"
+
+dns_random_subdomains:
+  description: "Обнаружение генерации случайных поддоменов"
+  enabled: true
+  severity: medium
+  conditions:
+    - "protocol == 'DNS'"
+  thresholds:
+    domain_entropy: 4.0
+    domain_length: 50
+    unique_domains_per_source: 20
+    time_window_seconds: 30
+  actions:
+    - "block_ip"
+    - "notify_admin"
+  parameters:
+    block_ip:
+      ttl_minutes: 90
+
+# Дополнительные правила
+lateral_movement:
+  description: "Обнаружение латерального перемещения в сети"
+  enabled: true
+  severity: critical
+  conditions:
+    - "internal_to_internal == true"
+    - "unusual_protocol_usage == true"
+  thresholds:
+    unique_internal_hosts: 5
+    time_window_seconds: 300
+  actions:
+    - "isolate_host"
+    - "notify_admin"
+  parameters:
+    isolate_host:
+      ttl_minutes: 1440
+      auto_execute: false  # Требует ручного подтверждения
+
+anomaly_detection:
+  description: "Обнаружение аномальной сетевой активности"
+  enabled: true
+  severity: medium
+  conditions:
+    - "traffic_volume > baseline * 3"
+    - "unusual_time_pattern == true"
+  thresholds:
+    baseline_deviation: 3.0
+    time_window_seconds: 60
+  actions:
+    - "notify_admin"
+    - "log_event"
+  parameters:
+    log_event:
+      log_level: "warning"

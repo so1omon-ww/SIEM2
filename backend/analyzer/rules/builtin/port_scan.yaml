@@ -1,0 +1,41 @@
+
+rules:
+  - name: "port_scan_detection"
+    type: "threshold"
+    description: "Обнаружение сканирования портов"
+    severity: "medium"
+    category: "network"
+    tags: ["port_scan", "network", "reconnaissance"]
+    
+    # Условия срабатывания
+    matches:
+      - field: "event_type"
+        operator: "eq"
+        value: "net.connection"
+    
+    # Настройки threshold правила
+    window: "2m"
+    threshold: 3
+    group_by: ["src_ip", "dst_ip"]
+    dedup_key: "port_scan_{src_ip}_{dst_ip}"
+    
+    # Действия при срабатывании
+    actions:
+      - type: "alert"
+        parameters:
+          title: "Обнаружено сканирование портов"
+          description: "IP {src_ip} сканирует порты хоста {dst_ip}"
+        priority: 1
+      
+      - type: "notification"
+        parameters:
+          title: "Port scanning"
+          message: "Обнаружено сканирование портов с {src_ip} на {dst_ip}"
+          template: "threat_detected"
+        priority: 2
+      
+      - type: "log"
+        parameters:
+          message: "Port scan detected from {src_ip} to {dst_ip}"
+          level: "warning"
+        priority: 3

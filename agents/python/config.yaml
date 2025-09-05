@@ -1,0 +1,27 @@
+# Универсальный конфиг для Windows и Linux
+server_url: "http://localhost:8000"
+api_key: "690023318602ee078fb6d5cbe2a17f8bd5d99a8e4899d8765c5ad23828938beb"  # API ключ для привилегированного агента
+host_id: "HOSTNAME-OR-ASSET-ID"  # Замените на имя вашего хоста
+verify_tls: false
+log_level: "INFO"
+
+# Настройки агента
+agent:
+  enabled: true
+  interval: 30
+
+# Настройки сниффера
+sniffer:
+  enabled: true
+  interface: null  # null = автоопределение, или укажите конкретный интерфейс
+  portscan_threshold: 10
+  portscan_window_sec: 60
+  min_severity: "info"
+  
+  # Windows-специфичные настройки
+  windows:
+    interface: null  # Например: "\\Device\\NPF_{GUID}"
+    
+  # Linux-специфичные настройки
+  linux:
+    interface: null  # Например: "eth0", "wlan0"

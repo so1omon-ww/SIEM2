@@ -1,0 +1,34 @@
+# Dockerfile для сборки Astra Linux репозитория
+FROM ubuntu:20.04
+
+# Установка необходимых пакетов
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-psutil \
+    python3-requests \
+    python3-yaml \
+    wget \
+    curl \
+    gnupg \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Установка дополнительных Python зависимостей
+RUN pip3 install --upgrade pip
+
+# Создание рабочей директории
+WORKDIR /app
+
+# Копирование скриптов и агентов
+COPY scripts/ /app/scripts/
+COPY agents/ /app/agents/
+
+# Создание директории для репозиториев
+RUN mkdir -p /app/offline_repos/astra
+
+# Установка прав на выполнение
+RUN chmod +x /app/scripts/build_astra_repo_fixed.py
+
+# Команда по умолчанию
+CMD ["python3", "scripts/build_astra_repo_fixed.py"]

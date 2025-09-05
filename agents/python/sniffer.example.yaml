@@ -1,0 +1,16 @@
+# sniffer.example.yaml — конфиг сниффера (Windows/Linux)
+# Укажите адрес сервера и API ключ:
+server_url: "http://127.0.0.1:8000"   # например: "http://192.168.1.10:8000"
+api_key: "YOUR_API_KEY_HERE"          # API ключ из веб-интерфейса
+host_id: "HOSTNAME-OR-ASSET-ID"       # понятное имя хоста
+verify_tls: false
+log_level: "INFO"
+
+# Настройки сниффера
+sniffer:
+  enabled: true
+  interface: null                     # null=автоопределение; список: python agent.py --list-interfaces
+  portscan_threshold: 10
+  portscan_window_sec: 60
+  block_on_portscan: false            # true = блокировать источник локальным фаерволом
+  min_severity: "info"

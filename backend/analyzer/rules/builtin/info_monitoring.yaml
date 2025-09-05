@@ -1,0 +1,61 @@
+rules:
+  - name: "system_connectivity"
+    type: "immediate"
+    description: "Системная связность"
+    severity: "info"
+    category: "network"
+    tags: ["connectivity", "system", "health"]
+    
+    # Условия срабатывания - любая сетевая активность
+    matches:
+      - field: "event_type"
+        operator: "eq"
+        value: "net.connection"
+        case_sensitive: false
+    
+    # Действия при срабатывании
+    actions:
+      - type: "alert"
+        parameters:
+          title: "[NET] Системная активность"
+          description: "Зафиксирована сетевая активность: {src_ip} → {dst_ip}:{dst_port}"
+        priority: 5
+      
+      - type: "log"
+        parameters:
+          message: "Network connectivity confirmed: {src_ip} to {dst_ip}:{dst_port}"
+          level: "info"
+        priority: 6
+
+  - name: "protocol_diversity"
+    type: "immediate"
+    description: "Разнообразие протоколов"
+    severity: "info"
+    category: "network"
+    tags: ["protocol", "monitoring", "diversity"]
+    
+    # Условия срабатывания - UDP трафик
+    matches:
+      - field: "event_type"
+        operator: "eq"
+        value: "net.connection"
+        case_sensitive: false
+      
+      - field: "protocol"
+        operator: "eq"
+        value: "udp"
+        case_sensitive: false
+    
+    # Действия при срабатывании
+    actions:
+      - type: "alert"
+        parameters:
+          title: "[NETWORK] UDP активность"
+          description: "Обнаружен UDP трафик между {src_ip} и {dst_ip}:{dst_port}"
+        priority: 5
+      
+      - type: "log"
+        parameters:
+          message: "UDP protocol activity detected"
+          level: "info"
+        priority: 6
